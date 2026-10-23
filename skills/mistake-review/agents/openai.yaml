@@ -1,0 +1,4 @@
+interface:
+  display_name: "错题整理与互动复习"
+  short_description: "按指定小节整理错题，确认后以LaTeX归档，并逐问复习及保留学习历史"
+  default_prompt: "使用 $mistake-review 按我指定的小节整理错题，先给分析预览，确认后再生成 LaTeX PDF。"

@@ -1,50 +1,59 @@
-# video-to-note
+# 视频学习笔记
 
-Codex视频学习笔记Skill，版本 **2.1.0**。
+把指定视频或本地音视频整理成可回查的学习笔记：先取得可信字幕或完整转录，再核对必要画面，保留来源、时间点和未解决的内容缺口。
 
-读取视频链接或本地音视频，结合字幕、完整音轨转录与关键画面生成可追溯的图文笔记。需要时提炼工作流与提示词，区分作者做法和整理建议。
+## 适合什么任务
 
-## 新版关键画面规则
-
-有章节时按章节读取；章节不可取得时，用主题转换与标题页建立“分析者划分”。结合正文变化、讲解信息点及15—30秒概览采样定位候选图，比较相邻帧，选完整、稳定、遮挡少的画面。
-
-优先保留清单、步骤、设置、代码、公式、对比和操作结果；相似画面有独有信息时不去重。截图数量不预设，最终逐节检查漏图，保存时间、用途与跳过理由。
-
-## 安装与依赖
-
-这是Skill仓库，不是独立桌面应用。把仓库放在Codex技能目录的`video-to-note`文件夹中，保证`SKILL.md`位于根目录。
-
-目标目录不存在时，可执行：
-
-```powershell
-git clone https://github.com/tzq-tbw/agent-skills.git
-Copy-Item -LiteralPath .\agent-skills\skills\video-to-note -Destination "$env:USERPROFILE\.codex\skills\video-to-note" -Recurse
-```
-
-已有同名Skill时先备份再更新，不重复安装到多个发现目录。重启Codex或新建会话后检查技能列表。
-
-转录需要Python、FFmpeg/FFprobe及`requirements.txt`里的包。配置与运行命令见[环境说明](references/local-environment.md)。下载器、平台登录和模型按实际来源另配；工具可用性以当次结果为准。
+- 记录教程中的操作步骤、设置、代码和关键截图。
+- 整理讲座、课程或访谈的主要概念、方法与案例。
+- 从适合操作复用的视频中提炼工作流和完成条件。
+- 对需要转录的长音轨保存检查点，中断后继续。
 
 ## 使用
 
-在Codex聊天中说：
+安装整个 `video-to-note` 目录，安装方式见[仓库说明](../../README.md)。在 Agent 中说：
 
 ```text
-使用 $video-to-note 读取【视频链接或本地文件路径】，生成图文学习笔记。
-按章节和独有信息选取关键截图，注明时间与用途，保存到【笔记目录】。
-适合操作复用时补充工作流，区分作者做法和整理建议。
+使用 $video-to-note 读取【视频链接或本地文件】。
+按章节整理学习笔记，核对关键操作画面，标注时间点，保存到【笔记目录】。
 ```
 
-Codex执行工具、阅读转录、核对画面并整理笔记。`transcribe.py`只转录；`finalize.py`只检查证据记录与文件，不能替代语义审阅。
+先确定所需单个视频或分 P。平台是否可访问、是否需要登录和字幕是否可信，以当次实际结果为准；安装下载器不代表一定取得材料。
 
-## 文件
+## 环境与依赖
 
-- `SKILL.md`：执行入口。
-- `references/frame-selection.md`：关键画面选择与漏图检查。
-- `references/evidence.md`：持久证据格式。
-- `references/local-environment.md`：环境与命令。
-- `scripts/transcribe.py`：试读、完整转录与断点续跑。
-- `scripts/finalize.py`：产出检查和成功清理。
-- `scripts/test_helpers.py`：辅助脚本的隔离检查。
+有可信字幕时可以先用字幕；需要转录时，使用 Python 3.10+、FFmpeg / FFprobe，以及 [requirements.txt](requirements.txt) 中的 `numpy`、`faster-whisper`、`PyYAML`。平台下载器、模型与登录态按任务另配。
 
-转录完成不代表每句准确；原视频遮挡与低分辨率仍可能需人工复核。仓库不包含用户视频、笔记、模型缓存或登录凭据。
+```powershell
+python -m venv .venv
+& .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+Get-Command ffmpeg,ffprobe
+```
+
+命令从本 Skill 目录执行。macOS / Linux 使用 `.venv/bin/python`。脚本不默认下载模型；首次转录需明确模型、先做一分钟试读。配置和命令详见[环境说明](references/local-environment.md)。
+
+## 输出
+
+- **Markdown 笔记**：来源、时长、实际处理范围、要点和关键时间点。
+- **持久附件**：必要截图及笔记中的图片链接，不依赖临时目录。
+- **同名 `.evidence.json`**：章节范围、关键证据、核对记录及未解决项。
+
+中间媒体与转录检查点保存在独立任务目录。成功核对并确认持久文件可读后才清理，用户原文件和模型缓存保留。
+
+## 文件入口
+
+| 文件 | 用途 |
+|---|---|
+| [SKILL.md](SKILL.md) | Agent 的获取、核对、写作与清理流程 |
+| [画面选择](references/frame-selection.md) | 定位关键画面，检查章节漏图 |
+| [证据格式](references/evidence.md) | 保存来源、范围与核对结果 |
+| [transcribe.py](scripts/transcribe.py) | 试转录、完整转录与断点续跑 |
+| [finalize.py](scripts/finalize.py) | 检查证据与文件，按条件清理临时目录 |
+
+## 限制
+
+不会凭标题、简介或抽样片段声称总结了全片。语音识别会出错，低分辨率、遮挡、公式与专有名词可能需要人工回听或看图复核。
+
+`transcribe.py` 处理完音轨不等于每句准确，`finalize.py` 通过也不等于内容已经语义核验。实际阅读、比对和笔记整理由宿主 Agent 完成。
+
+本目录尚未附独立许可证；不自动沿用其他 Skill 的 MIT 授权。
